@@ -65,7 +65,7 @@ const pairingNumber = digitsOnly(process.env.PAIRING_NUMBER || '')
 const validPairingNumber = pairingNumber.length >= 8 && pairingNumber.length <= 15
 if (process.env.NODE_ENV === 'production') {
     if (pairingOnlyMode && !validPairingNumber) {
-        throw new Error('Set PAIRING_NUMBER to your WhatsApp number (8–15 digits) for passwordless pairing mode.')
+        console.warn('PAIRING_NUMBER is missing or invalid. The pairing page will start, but pairing requests will stay disabled until it is configured.')
     }
     if (!pairingOnlyMode && (!dashboardPassword || dashboardPassword.length < 20)) {
         throw new Error('Set DASHBOARD_PASSWORD to a secret of at least 20 characters, or enable passwordless pairing mode with PAIRING_ONLY=true and PAIRING_NUMBER.')

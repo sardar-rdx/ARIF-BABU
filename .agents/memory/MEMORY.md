@@ -1,1 +1,1 @@
-- [Baileys runtime requirement](baileys-runtime.md) — this bot's Baileys release rejects Node 18 even though the root manifest allows it.
+- [Baileys runtime requirement](baileys-runtime.md) — Baileys needs Node 20+; Render may pick an untested newer major from a broad engine range.

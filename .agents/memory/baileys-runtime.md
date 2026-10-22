@@ -3,8 +3,8 @@ name: Baileys runtime requirement
 description: Runtime compatibility constraint for the WhatsApp client dependency.
 ---
 
-Use Node.js 20 or newer for this bot. The current Baileys release has an install-time guard that rejects Node 18, despite the root package manifest allowing Node 18.
+Use Node.js 20 or newer for this bot. A broad manifest range such as `>=18` can make Render select a much newer major than the project has been tested on; this project has been verified with Node 24.
 
-**Why:** the package manifest's declared engine range does not reflect Baileys' actual minimum runtime.
+**Why:** Baileys' actual minimum is newer than the old manifest declared, and Render selected Node 26 from the broad range while the app had been tested on Node 24. The provided logs do not prove Node 26 caused the crash, so keep the version pin as a compatibility safeguard, not as a confirmed root cause.
 
-**How to apply:** keep the configured Node.js runtime at 20 or newer and check Baileys' runtime guard when changing its version.
+**How to apply:** use the tested Node 24 major for Render until a newer major is tested; check Baileys' engine requirement when changing its version.
