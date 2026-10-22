@@ -606,6 +606,15 @@
   .ctrl-btn.logout:hover:not(:disabled) { background: rgba(255, 211, 106, .1); }
   .ctrl-btn.newbot { border-color: rgba(199, 255, 84, .55); color: var(--lime); background: rgba(199, 255, 84, .06); }
   .ctrl-btn.newbot:hover:not(:disabled) { background: rgba(199, 255, 84, .12); box-shadow: 0 0 16px rgba(199, 255, 84, .14); }
+  .ctrl-btn.restart { border-color: rgba(92, 231, 220, .42); color: var(--cyan); }
+  .ctrl-btn.clear { border-color: rgba(255, 86, 143, .4); color: var(--pink); }
+  .settings-save {
+    width: 100%;
+    margin-top: 8px;
+    border-color: rgba(92, 231, 220, .35);
+    color: var(--cyan);
+  }
+  input:disabled { opacity: .55; cursor: not-allowed; }
   .control-note {
     margin: 11px 0 0;
     color: #75878b;
@@ -819,17 +828,18 @@
     </div>
 
     <div class="field" id="prefixField">
-      <label class="field-label" for="prefix">Bot prefix <span class="field-hint">1–3 characters</span></label>
-      <input type="text" id="prefix" value="." maxlength="3" placeholder="e.g. . or !" autocomplete="off" />
+      <label class="field-label" for="prefix">Bot prefix <span class="field-hint" id="prefixHint">1–3 characters</span></label>
+      <input type="text" id="prefix" value="." maxlength="3" placeholder="e.g. . or !" autocomplete="off" disabled />
     </div>
 
     <div class="field" id="ownerField">
       <label class="field-label owner-label" for="ownerNumber">
         <span>Owner number</span>
-        <span class="field-hint">Optional — defaults to pairing number</span>
+        <span class="field-hint" id="ownerFieldHint">Optional — defaults to pairing number</span>
       </label>
-      <input type="tel" id="ownerNumber" placeholder="Country code + number" maxlength="15" inputmode="numeric" autocomplete="tel" />
+      <input type="tel" id="ownerNumber" placeholder="Country code + number" maxlength="15" inputmode="numeric" autocomplete="tel" disabled />
     </div>
+    <button type="button" class="ctrl-btn settings-save" id="saveSettingsBtn" onclick="saveSettings()" disabled>Save Prefix &amp; Owner</button>
 
     <button id="genBtn" type="button" onclick="getCode()">
       <svg class="button-crosshair" aria-hidden="true" viewBox="0 0 18 18" fill="none">
@@ -860,29 +870,35 @@
       </ol>
     </div>
 
-    <div class="control-panel" id="controlPanel" hidden>
+    <div class="control-panel" id="controlPanel">
       <div class="control-head">
         <div class="code-label">Bot controls</div>
         <span class="control-state" id="ctrlState">—</span>
       </div>
       <div class="control-grid">
-        <button type="button" class="ctrl-btn start" id="btnStart" onclick="botAction('start')" title="Start the bot">
+        <button type="button" class="ctrl-btn start" id="btnStart" onclick="botAction('start')" title="Start the bot" disabled>
           <span class="ctrl-ico">▶</span> Start
         </button>
-        <button type="button" class="ctrl-btn stop" id="btnStop" onclick="botAction('stop')" title="Stop the bot (keeps session)">
+        <button type="button" class="ctrl-btn stop" id="btnStop" onclick="botAction('stop')" title="Stop the bot (keeps session)" disabled>
           <span class="ctrl-ico">■</span> Stop
         </button>
-        <button type="button" class="ctrl-btn connect" id="btnConnect" onclick="botAction('connect')" title="Reconnect / connect with saved session">
+        <button type="button" class="ctrl-btn restart" id="btnRestart" onclick="botAction('restart')" title="Restart the bot and keep its session" disabled>
+          <span class="ctrl-ico">⟳</span> Restart
+        </button>
+        <button type="button" class="ctrl-btn connect" id="btnConnect" onclick="botAction('connect')" title="Reconnect / connect with saved session" disabled>
           <span class="ctrl-ico">↻</span> Connect
         </button>
-        <button type="button" class="ctrl-btn logout" id="btnLogout" onclick="botAction('logout')" title="Unlink WhatsApp account and clear session">
+        <button type="button" class="ctrl-btn logout" id="btnLogout" onclick="botAction('logout')" title="Unlink WhatsApp account and clear session" disabled>
           <span class="ctrl-ico">⎋</span> Logout
         </button>
-        <button type="button" class="ctrl-btn newbot" id="btnNewBot" onclick="botAction('reset')" title="New bot — wipe session and wait for a number">
+        <button type="button" class="ctrl-btn newbot" id="btnNewBot" onclick="botAction('reset')" title="New bot — wipe session and wait for a number" disabled>
           <span class="ctrl-ico">✦</span> New Bot
         </button>
+        <button type="button" class="ctrl-btn clear" id="btnClearSession" onclick="botAction('clear-session')" title="Clear the saved session and prepare to pair again" disabled>
+          <span class="ctrl-ico">⌫</span> Clear Session
+        </button>
       </div>
-      <p class="control-note">Logout or New Bot clears this app’s saved login. No pair code is created automatically; enter the number you want to connect and generate a code. Your WhatsApp chats are not deleted.</p>
+      <p class="control-note" id="controlNote">Checking whether bot controls are available…</p>
     </div>
 
     <footer class="workspace-footer">
@@ -894,6 +910,8 @@
 
 <script>
 const $ = id => document.getElementById(id);
+let publicPairingMode = true;
+let configLoaded = false;
 
 function show(msg, type) {
   const el = $('msg');
@@ -907,9 +925,25 @@ async function checkStatus() {
     const r = await fetch('/status');
     const d = await r.json();
     const badge = $('statusBadge');
-    $('controlPanel').hidden = d.pairingOnly === true;
-    $('prefixField').hidden = d.pairingOnly === true;
-    $('ownerField').hidden = d.pairingOnly === true;
+    publicPairingMode = d.pairingOnly === true;
+    $('controlPanel').hidden = false;
+    $('prefixField').hidden = false;
+    $('ownerField').hidden = false;
+    $('prefix').disabled = publicPairingMode;
+    $('ownerNumber').disabled = publicPairingMode;
+    $('saveSettingsBtn').disabled = publicPairingMode;
+    $('prefixHint').textContent = publicPairingMode ? 'Owner-only setting' : '1–3 characters';
+    $('ownerFieldHint').textContent = publicPairingMode ? 'Not editable on the public page' : 'Optional — defaults to pairing number';
+    $('ownerNumber').placeholder = publicPairingMode ? 'Private owner setting' : 'Country code + number';
+    $('controlNote').textContent = publicPairingMode
+      ? 'Public pairing mode: bot controls and settings are shown but disabled. Use an authenticated dashboard to change them.'
+      : 'Restart keeps the session. Logout unlinks WhatsApp. Clear Session erases local credentials and stops the bot; New Bot clears credentials and prepares a fresh pairing.';
+    setCtrlButtons(!publicPairingMode && !ctrlBusy);
+    if (!publicPairingMode && !configLoaded) {
+      $('prefix').value = d.prefix || '.';
+      $('ownerNumber').value = d.ownerNumber || '';
+      configLoaded = true;
+    }
     updateControls(d);
     if (!d.pairCode) {
       $('codeBox').classList.remove('show');
@@ -1018,6 +1052,46 @@ function copyCode() {
   show('Code copied.', 'success');
 }
 
+async function saveSettings() {
+  if (publicPairingMode) {
+    show('Settings are disabled on the public pairing page.', 'error');
+    return;
+  }
+
+  const prefix = $('prefix').value.trim();
+  const owner = $('ownerNumber').value.replace(/[^0-9]/g, '');
+  if (prefix && prefix.length > 3) {
+    show('Prefix must be 1–3 characters.', 'error');
+    return;
+  }
+  if (owner && (owner.length < 8 || owner.length > 15)) {
+    show('Owner number must be 8–15 digits with country code.', 'error');
+    return;
+  }
+  if (!prefix && !owner) {
+    show('Enter a prefix or owner number to save.', 'error');
+    return;
+  }
+
+  $('saveSettingsBtn').disabled = true;
+  try {
+    const r = await fetch('/configure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix, owner })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Settings could not be saved.');
+    show('Prefix and owner settings saved.', 'success');
+    configLoaded = false;
+    checkStatus();
+  } catch (e) {
+    show(e.message || 'Settings could not be saved.', 'error');
+  } finally {
+    $('saveSettingsBtn').disabled = publicPairingMode;
+  }
+}
+
 let ctrlBusy = false;
 
 function setCtrlState(label, cls) {
@@ -1027,7 +1101,7 @@ function setCtrlState(label, cls) {
 }
 
 function setCtrlButtons(enabled) {
-  ['btnStart', 'btnStop', 'btnConnect', 'btnLogout', 'btnNewBot'].forEach(id => {
+  ['btnStart', 'btnStop', 'btnRestart', 'btnConnect', 'btnLogout', 'btnNewBot', 'btnClearSession'].forEach(id => {
     const b = $(id);
     if (b) b.disabled = !enabled;
   });
@@ -1035,19 +1109,33 @@ function setCtrlButtons(enabled) {
 
 async function botAction(action) {
   if (ctrlBusy) return;
+  if (publicPairingMode) {
+    show('Bot controls are disabled on the public pairing page.', 'error');
+    return;
+  }
+  const confirmations = {
+    logout: 'This unlinks the WhatsApp account and clears its saved session. Continue?',
+    reset: 'This clears the saved bot session so a new account can be paired. Continue?',
+    'clear-session': 'This erases the saved session credentials. You will need to pair again. Continue?'
+  };
+  if (confirmations[action] && !window.confirm(confirmations[action])) return;
   const labels = {
     start: 'Starting bot…',
     stop: 'Stopping bot…',
+    restart: 'Restarting bot…',
     connect: 'Connecting…',
     logout: 'Logging out & clearing session…',
-    reset: 'Resetting — new pairing…'
+    reset: 'Resetting — new pairing…',
+    'clear-session': 'Clearing session…'
   };
   const done = {
     start: 'Start requested',
     stop: 'Bot stopped',
+    restart: 'Restart requested — session kept',
     connect: 'Connect requested',
     logout: 'Logged out — enter the number you want to connect',
-    reset: 'Reset done — enter the number you want to connect'
+    reset: 'Reset done — enter the number you want to connect',
+    'clear-session': 'Session cleared and bot stopped — connect when ready'
   };
   ctrlBusy = true;
   setCtrlButtons(false);
@@ -1063,7 +1151,7 @@ async function botAction(action) {
     if (d.success) {
       show(done[action] || 'Done', 'success');
       // After logout/reset the pair code is gone — hide code box
-      if (action === 'logout' || action === 'reset') {
+      if (action === 'logout' || action === 'reset' || action === 'clear-session' || action === 'restart') {
         $('codeBox').classList.remove('show');
         $('steps').style.display = 'none';
       }
@@ -1079,7 +1167,7 @@ async function botAction(action) {
     setCtrlState('Error', 'stopped');
   } finally {
     ctrlBusy = false;
-    setCtrlButtons(true);
+    setCtrlButtons(!publicPairingMode);
   }
 }
 

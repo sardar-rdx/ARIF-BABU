@@ -214,7 +214,7 @@ function startServer(port) {
             })
         }
 
-        // Bot controls: /control?action=stop|start|connect|logout|reset
+        // Bot controls: /control?action=stop|start|restart|connect|logout|reset|clear-session
         if (url.pathname === '/control') {
             if (req.method !== 'POST' || !isSameOrigin(req)) {
                 return json(res, 405, { success: false, error: 'Use a same-origin POST request.' })
@@ -226,15 +226,19 @@ function startServer(port) {
                 return json(res, 400, { success: false, error: err.message })
             }
             const action = (body.action || '').toLowerCase()
-            const allowed = ['stop', 'start', 'connect', 'logout', 'reset', 'newbot']
+            const allowed = ['stop', 'start', 'restart', 'connect', 'logout', 'reset', 'newbot', 'clear-session']
             if (!allowed.includes(action)) {
                 return json(res, 400, { success: false, error: 'Unknown action. Use: ' + allowed.join(', ') })
             }
-            if (!botControl.has(action === 'newbot' ? 'reset' : action)) {
+            const key = action === 'newbot'
+                ? 'reset'
+                : action === 'clear-session'
+                    ? 'clearSession'
+                    : action
+            if (!botControl.has(key)) {
                 return json(res, 503, { success: false, error: 'Bot control not ready yet. Wait a few seconds after bot start.' })
             }
             try {
-                const key = action === 'newbot' ? 'reset' : action
                 const result = await botControl.call(key)
                 log.web(`Control action from website: ${action}`)
                 return json(res, 200, { success: true, action, result: result || {} })

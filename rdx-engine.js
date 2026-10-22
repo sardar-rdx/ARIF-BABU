@@ -224,6 +224,19 @@ async function startXeonBotInc() {
             startXeonBotInc()
             return { connecting: true }
         },
+        restart: async () => {
+            global.botStopped = true
+            socketGeneration++
+            global.latestPairCode = null
+            global.pairCodeNumber = null
+            try { XeonBotInc.end?.(undefined) } catch {}
+            try { XeonBotInc.ws?.close?.() } catch {}
+            await new Promise(r => setTimeout(r, 1000))
+            global.botStopped = false
+            log.info('Bot restarting from pair website...')
+            startXeonBotInc()
+            return { restarting: true }
+        },
         logout: async () => {
             global.botStopped = true
             socketGeneration++
@@ -241,6 +254,19 @@ async function startXeonBotInc() {
             log.info('Session cleared — waiting for a number from the pair website')
             startXeonBotInc()
             return { loggedOut: true }
+        },
+        clearSession: async () => {
+            global.botStopped = true
+            socketGeneration++
+            global.latestPairCode = null
+            global.pairCodeNumber = null
+            try { XeonBotInc.end?.(undefined) } catch {}
+            try { XeonBotInc.ws?.close?.() } catch {}
+            await new Promise(r => setTimeout(r, 1000))
+            try { rmSync(sessionDir, { recursive: true, force: true }) } catch {}
+            global.pairingRequired = false
+            log.warn('Session cleared from pair website — bot is stopped')
+            return { sessionCleared: true, stopped: true }
         },
         reset: async () => {
             // "New Bot" — wipe session completely and reboot for a new pairing
