@@ -1,9 +1,10 @@
 # Running RDX BOT on Replit
 
 - Runtime: Node.js 20 or newer.
-- Start the bot with `npm start`. The Replit workflow sets `PORT=5000` for the pairing console.
-- Open the app preview and sign in to the console with username `admin` and the password stored in the `DASHBOARD_PASSWORD` Replit Secret.
-- In the console, enter your own WhatsApp number in international format (digits only, including the country code) and request a pairing code. In WhatsApp, open **Settings → Linked Devices → Link with phone number** and enter that code.
+- Install dependencies with `npm ci`, then run the `Start application` workflow to open the pairing page in Replit Preview on port 5000.
+- The Replit workflow uses pairing-only mode, so the page opens without a dashboard login and the bot-control endpoints stay disabled.
+- Do not share the preview link or pairing codes. Only pair a WhatsApp account you own.
 - Keep the `session/` directory private. It contains WhatsApp login credentials; do not share it or commit it.
+- For Render, set `PAIRING_NUMBER` in the service environment to the account’s full international number (digits only); the Render config already enables `PAIRING_ONLY`.
 
 This bot uses an unofficial WhatsApp Web client and may cause account restrictions. Use it only with an account you control, follow WhatsApp's terms, and do not use it for spam or bulk messaging.
