@@ -1,0 +1,1 @@
+- [Baileys runtime requirement](baileys-runtime.md) — this bot's Baileys release rejects Node 18 even though the root manifest allows it.

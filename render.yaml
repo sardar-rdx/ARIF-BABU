@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: rdxbot
+    runtime: node
+    region: singapore
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: rdxbot-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RDX_DATA_DIR
+        value: /var/data
+      - key: SESSION_DIR
+        value: /var/data/session
+      - key: STORE_FILE
+        value: /var/data/baileys_store.json
+      - key: PAIRING_ONLY
+        value: "true"
+      - key: PAIRING_NUMBER
+        sync: false
